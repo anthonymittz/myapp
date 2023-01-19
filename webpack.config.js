@@ -73,7 +73,7 @@ function configure(_, argv) {
         {
           test: /\.svg/,
           type: 'asset/inline',
-        }
+        },
       ]
     },
     optimization: {
