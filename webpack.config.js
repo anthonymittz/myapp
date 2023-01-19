@@ -16,7 +16,7 @@ const path = require('path');
 */
 
 const use = {
-  publicPath: '/myapp',
+  publicPath: '/docs/',
   publicPathDev: '/',
   staticDir: path.join(__dirname, 'public'),
   outputDir: path.join(__dirname, 'docs'),
