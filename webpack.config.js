@@ -19,30 +19,34 @@ const use = {
   publicPath: '/myapp',
   publicPathDev: '/',
   staticDir: path.join(__dirname, 'public'),
-  outputDir: path.join(__dirname, 'build'),
+  outputDir: path.join(__dirname, 'docs'),
   htmlTemplate: path.join(__dirname, 'src', 'index.html'),
   entryFile: path.join(__dirname, 'src', 'index.js'),
 };
 
 function configure(_, argv) {
   const mode = argv.mode || 'production';
-  const isProdMode = mode === 'production';
+  const isProduction = mode === 'production';
+  console.log(`[webpack] Running in ${mode} mode`);
   
   /** @type {import('webpack').Configuration} */
   const config = {
     mode,
     devServer: {
       port: 3000,
-      historyApiFallback: true,
+      historyApiFallback: isProduction ? { rewrites: [{ from: /\//, to: '/404.html' }] } : true,
       static: use.staticDir,
+      watchFiles: ['./src/**/*.js', './assets/*'],
     },
     entry: use.entryFile,
     output: {
       path: use.outputDir,
       publicPath: 
-        isProdMode ? use.publicPath : use.publicPathDev,
+        isProduction ? use.publicPath : use.publicPathDev,
       filename: 
-        isProdMode ? '[name].bundle.js' : '[name].[hash].js',
+        isProduction ? '[name].bundle.js' : '[name].[hash].js',
+      chunkFilename: 
+        isProduction ? '[name].bundle.js' : '[name].[hash].js',
     },
     plugins: [
       new HtmlWebpackPlugin({template: use.htmlTemplate}),
@@ -55,27 +59,35 @@ function configure(_, argv) {
           exclude: /node_modules/,
           use: {
             loader: 'babel-loader',
-            options: { presets: ['@babel/preset-env', '@babel/preset-react'] }
+            options: {presets: ['@babel/preset-env', '@babel/preset-react']}
           }
         },
         {
           test: /\.css$/,
-          use: {
-            loader: [ isProdMode ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader' ]
-          }
+          use: [ isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader' ]
         },
         {
           test: /\.(sass|scss)$/,
-          use: {
-            loader: [ isProdMode ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader', 'sass-loader' ]
-          }
+          use: [ isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader', 'sass-loader' ],
         },
         {
           test: /\.svg/,
           type: 'asset/inline',
         }
       ]
-    }
+    },
+    optimization: {
+      splitChunks: {
+        cacheGroups: {
+          vendor: {
+            test: /node_modules/,
+            chunks: 'initial',
+            name: 'vendor',
+            enforce: true
+          }
+        }
+      },
+    },
   };
 
   return config;
